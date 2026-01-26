@@ -1,41 +1,37 @@
-**Financial Text Ingestion and Staging Pipeline**
-
----
-
-**Overview**
-
-This repository contains an AWS-based pipeline for ingesting, staging, and structuring financial text data from Alpha Vantage and Financial Modeling Prep. The system automates the collection of earnings transcripts and news articles and loads them into Apache Iceberg tables for analytics.
-
----
-
 **Architecture**
 
-The pipeline uses AWS managed services and follows a layered design with Bronze and Silver stages.
+The pipeline follows a control-flow-first design, starting from scheduling and orchestration, then moving through ingestion and staging into analytical storage.
 
 **Scheduling (EventBridge)**
 
-- Earnings transcripts are scheduled quarterly
-- News articles are scheduled daily at 7:00 AM
-- Each schedule triggers a Step Functions workflow
-- An input parameter provides a list of stock tickers for processing
+EventBridge schedules trigger the pipeline at fixed intervals.
 
-**Ingestion – Bronze Layer**
+- Earnings transcripts are scheduled quarterly  
+- News articles are scheduled daily at 7:00 AM  
 
-Earnings transcripts and news articles are collected using AWS Lambda functions, which fetch data from external APIs and store the results as JSON files in S3.
+Each schedule triggers a Step Functions workflow.
 
 **Orchestration (Step Functions)**
 
-Step Functions workflows iterate over the list of stock tickers and reporting periods. For each iteration, ingestion is executed, data is staged in S3, Athena tables are created, and records are upserted into Iceberg.
+Step Functions workflows coordinate all pipeline activities.
+
+- An input parameter provides a list of stock tickers  
+- Workflows iterate over tickers and reporting periods  
+- Each iteration controls ingestion, staging, and merging  
+
+This layer manages execution order and failure handling.
+
+**Ingestion – Bronze Layer**
+
+The Bronze layer handles raw data ingestion.
+
+AWS Lambda functions fetch earnings transcripts and news articles from external APIs and store the results as JSON files in S3.
 
 **Staging – Silver Layer**
 
-Athena external tables are created on top of raw JSON files. The data is transformed and merged into Apache Iceberg tables.
+The Silver layer handles transformation, merging, and analytical storage.
 
-**Analytical Storage (Iceberg)**
-
-Apache Iceberg tables are stored in S3 and support incremental upserts and analytical queries.
-
----
+Athena external tables are created over raw JSON files. Staged data is transformed and upserted into Apache Iceberg tables stored in S3. These Iceberg tables serve as the analytical storage layer and support incremental updates and querying.
 
 **Folder Structure and Repository Contents**
 
@@ -50,15 +46,6 @@ Contains AWS Lambda functions for data ingestion.
 
 These functions fetch external data and write raw JSON files to S3.
 
-**environment_setup**
-
-Contains Athena queries for environment initialization.
-
-- Create Apache Iceberg tables  
-- Define table schemas and properties  
-
-This layer prepares the analytical storage environment.
-
 **staging_processing**
 
 Contains Athena queries for staging and merging data.
@@ -66,7 +53,7 @@ Contains Athena queries for staging and merging data.
 - Create external tables on raw JSON files  
 - Upsert staged data into Iceberg tables  
 
-This layer handles transformation and merge logic.
+This layer handles transformation and analytical preparation.
 
 **orchestration**
 
@@ -75,4 +62,13 @@ Contains Step Functions workflows.
 - Quarterly earnings transcript workflow  
 - Daily news article workflow  
 
-These workflows coordinate ingestion, staging, and merge operations across the pipeline.
+These workflows coordinate ingestion, staging, and merge operations.
+
+**environment_setup**
+
+Contains Athena queries for environment initialization.
+
+- Create Apache Iceberg tables  
+- Define table schemas and properties  
+
+This layer prepares the analytical storage environment.
