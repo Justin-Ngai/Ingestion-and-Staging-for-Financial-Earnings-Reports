@@ -66,25 +66,43 @@ Both pipelines follow the same orchestration pattern.
 
 ---
 
+**Folder Structure**
+
+The repository is organized into four main folders based on pipeline responsibilities.
+
+**raw_processing**  
+Contains all logic related to Bronze layer ingestion. This includes Lambda functions and scripts for fetching earnings transcripts and news articles and storing raw JSON in S3.
+
+**staging_processing**  
+Contains transformation and merge logic for the Silver layer. This includes Athena queries and scripts used to process raw data and prepare it for Iceberg upserts.
+
+**orchestration**  
+Contains Step Functions workflows and related configuration. This layer coordinates all services that handle files and processes defined in the processing folders.
+
+**environment_setup**  
+Contains infrastructure and setup scripts. This includes creating Apache Iceberg tables, defining schemas, and configuring resources needed for upsert operations.
+
+---
+
 **Repository Contents**
 
 1. Lambda – Earnings Transcript Ingestion  
-   Fetches transcripts from Alpha Vantage and stores results in S3 as JSON.
+   Located in raw_processing. Fetches transcripts from Alpha Vantage and stores results in S3 as JSON.
 
 2. Lambda – News Article Ingestion  
-   Fetches news from Financial Modeling Prep and writes normalized JSON to S3.
+   Located in raw_processing. Fetches news from Financial Modeling Prep and writes normalized JSON to S3.
 
 3. Athena – Create Iceberg Table  
-   Creates Apache Iceberg tables in S3 and defines schemas and properties.
+   Located in environment_setup. Creates Apache Iceberg tables in S3 and defines schemas and properties.
 
 4. Athena – Create External JSON Table  
-   Creates Athena tables over raw JSON files.
+   Located in staging_processing. Creates Athena tables over raw JSON files.
 
 5. Athena – Upsert into Iceberg  
-   Merges staged data into Iceberg tables and handles inserts and updates.
+   Located in staging_processing. Merges staged data into Iceberg tables and handles inserts and updates.
 
 6. Step Functions Workflow  
-   JSON state machine definitions that orchestrate ingestion and transformation.
+   Located in orchestration. JSON state machine definitions that orchestrate ingestion and transformation.
 
 **Workflow Steps**
 
